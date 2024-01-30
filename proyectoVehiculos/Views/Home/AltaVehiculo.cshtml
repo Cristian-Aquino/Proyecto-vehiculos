@@ -1,0 +1,165 @@
+﻿
+@{
+    ViewBag.Title = "AltaVehiculo";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Agregue los datos del nuevo vehiculo</h2>
+
+
+<div class="row">
+    <div>
+        <label for="txt_usuario">Patente/Placa</label>
+        <input type="text" id="txt_patente" runat="server" maxlength="8">
+    </div>
+
+    <div>
+        <label for="txt_marca">Marca</label>
+        <select id="combobox_marca">
+            <option value="value1">Seleccione una marca</option>
+            <option value="Peugeot">Peugeot</option>
+            <option value="Audi">Audi</option>
+            <option value="Fiat">Fiat</option>
+            <option value="Fort">Fort</option>
+            <option value="Chevrolet">Chevrolet</option>
+        </select>
+    </div>
+    <label for="txt_usuario">Modelo</label>
+    <input type="text" id="txt_modelo" runat="server">
+
+    <div>
+        <label for="txt_usuario">Puertas</label>
+        <input type="text" id="txt_puertas" onkeypress="return soloNumeros(event)">
+    </div>
+
+    <div>
+        <label for="txt_titular">Titular/Dueño*</label>
+        <select id="combobox_titular">
+            <option value="value1">Seleccione un titular</option>
+        </select>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2">
+        <button type="button" id="btn_agregar_vehiculo" class="btn btn-success" onclick="agregarVehiculo()">Agregar</button>
+    </div>
+    <div class="col-md-2">
+        <button type="button" id="btn_cancelar" class="center btn waves-effect waves-light blue-grey darken-3" onclick="borrarCampos()">Cancelar</button>
+    </div>
+
+</div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="modalAlta" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tituloModal">Exito al guardar</h5>
+            </div>
+            <div class="modal-body">
+                <span id="span_msj"></span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="cerrarModal()">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section scripts{
+    <script>
+
+        var comboBoxTitulares;
+
+        fetch('https://reqres.in/api/users')
+            .then(res => res.json()) // el método .json() analiza la respuesta JSON en un objeto literal JS
+            .then(data => llenarComboBox(data));
+
+        function llenarComboBox(data) {
+            comboBoxTitulares = document.getElementById("combobox_titular");;
+            for (var i = 0; i < data.data.length; i++) {
+                var option = document.createElement("option");
+                option.value = data.data[i].first_name + " " + data.data[i].last_name;
+                option.text = data.data[i].first_name + " " + data.data[i].last_name;
+                comboBoxTitulares.add(option);
+            }
+        }
+
+        function soloNumeros(event) {
+            if (event.charCode >= 48 && event.charCode <= 57) {
+                return true;
+            }
+            return false;
+        }
+
+
+        function abrirModal() {
+            $("#modalAlta").modal("show");
+        }
+
+        function cerrarModal() {
+            $("#modalAlta").modal("toggle");
+        }
+
+
+
+        function borrarCampos() {
+            $("#txt_patente").val("");
+            $("#combobox_marca").val("value1");
+            $("#txt_modelo").val("");
+            $("#txt_puertas").val("");
+            $("#combobox_titular").val("value1");
+        }
+
+        function agregarVehiculo() {
+
+            if ($("#txt_patente").val() === "" || $("#combobox_marca").val() == "value1" || $("#txt_modelo").val() == "" || $("#txt_puertas").val() == "" ||
+                $("#combobox_titular").val() == "value1"
+                ) {
+                $("#tituloModal").text("¡Aviso!");
+                $("#span_msj").text("Faltan ingresar datos.");
+                abrirModal();
+            }
+
+            else {
+                var vehiculo = {
+                patente: $("#txt_patente").val(),
+                marca: $("#combobox_marca").val(),
+                modelo: $("#txt_modelo").val(),
+                cant_puertas: $("#txt_puertas").val(),
+                nombre_titular: $("#combobox_titular").val(),
+
+                }
+                jQuery.ajax({
+                    url: '@Url.Action("GuardarVehiculo", "Home")',
+                    type: "POST",
+                    data: JSON.stringify({ vehiculo: vehiculo }),
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (data) {
+                        if (data.resultado === "OK") {
+                            borrarCampos();
+                            $("#tituloModal").text("Exito al guardar.");
+                            $("#span_msj").text("Se agrego el vehiculo de forma correcta.");
+                            abrirModal();
+                        }
+                        else {
+                            $("#tituloModal").text("Ocurrio un error.");
+                            $("#span_msj").text(data);
+                            abrirModal();
+                        }
+                    },
+                    error: function (error) {
+                        console.log(error)
+                    }
+                });
+            }
+
+
+        }
+
+    </script>
+}
